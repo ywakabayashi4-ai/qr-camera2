@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>QR復号ページ</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: sans-serif; padding: 2em; }
+    #reader { width: 100%; max-width: 400px; margin: auto; }
+    input, button { margin-top: 1em; padding: 0.5em; width: 100%; }
+    #result { margin-top: 1em; white-space: pre-wrap; background: #f0f0f0; padding: 1em; }
+  </style>
+</head>
+<body>
+  <h2>📷 QRコード復号ツール</h2>
+  <div id="reader"></div>
+
+  <label>🔑 パスワード</label>
+  <input type="password" id="password" placeholder="復号用パスワード">
+  <button onclick="decrypt()">復号する</button>
+
+  <h3>✅ 復号結果：</h3>
+  <div id="result"></div>
+
+  <script>
+    let scannedText = "";
+
+    function onScanSuccess(decodedText, decodedResult) {
+      scannedText = decodedText;
+      document.getElementById("result").innerText = "🔐 読み取った暗号化文字列：\n" + scannedText;
+    }
+
+    function decrypt() {
+      const password = document.getElementById("password").value;
+      try {
+        const decrypted = CryptoJS.AES.decrypt(scannedText, password);
+        const text = decrypted.toString(CryptoJS.enc.Utf8);
+        document.getElementById("result").innerText += "\n\n✅ 復号結果：\n" + (text || "❌ 復号失敗（パスワードが違うか形式が不正）");
+      } catch (e) {
+        document.getElementById("result").innerText += "\n❌ 復号エラー：" + e;
+      }
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras && cameras.length) {
+        html5QrCode.start(
+          cameras[0].id,
+          { fps: 10, qrbox: 250 },
+          onScanSuccess
+        );
+      }
+    }).catch(err => {
+      document.getElementById("result").innerText = "❌ カメラ起動エラー：" + err;
+    });
+  </script>
+</body>
+</html>
